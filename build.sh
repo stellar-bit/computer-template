@@ -1,0 +1,1 @@
+cargo build --release --out-dir=./dist -Z unstable-options
