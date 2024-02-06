@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 
 use super::*;
 
@@ -43,6 +43,7 @@ impl Plugin for SpacecraftConstruction {
             } 
         }
         self.spacecraft_structures = vec![];
+        fs::create_dir_all(&self.spacecraft_structures_path).unwrap();
         for dir_entry in self.spacecraft_structures_path.read_dir().unwrap() {
             let dir_entry = dir_entry.unwrap(); 
             let structure_path = dir_entry.path();
@@ -69,6 +70,7 @@ impl Plugin for SpacecraftConstruction {
     fn update_ui(&mut self, ui: &mut egui::Ui) {
         ui.checkbox(&mut self.auto_deploy, "auto deploy");
         
+        ui.label(format!("Directory: {:?}", self.spacecraft_structures_path));
         for (name, spacecraft_structure) in &self.spacecraft_structures {
             if ui.button(name).clicked() {
                 self.build_queue.push(spacecraft_structure.clone());

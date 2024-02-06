@@ -1,3 +1,5 @@
+use std::fs;
+
 
 fn main() {
     let time_mins = std::time::SystemTime::now()
@@ -10,6 +12,7 @@ fn main() {
 
 
     let computers_dir = std::path::Path::new("./dist");
+    std::fs::create_dir_all(computers_dir).unwrap();
 
     let computer_builds = std::fs::read_dir(computers_dir).unwrap();
 
