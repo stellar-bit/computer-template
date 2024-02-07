@@ -15,5 +15,5 @@ wasm-bindgen = "0.2.84"
 strum = { version = "0.25.0", features = ["derive"] }
 
 [lib]
-name = "computer_4"
+name = "computer_6"
 crate-type = ["cdylib"]

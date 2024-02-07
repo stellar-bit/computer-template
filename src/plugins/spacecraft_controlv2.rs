@@ -39,12 +39,14 @@ impl Plugin for SpacecraftControl {
     }
 
     fn update_ui(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            ui.text_edit_singleline(&mut self.new_tag_input);
+            if ui.button("Add tag").clicked() {
+                self.selectable_tags.push((std::mem::take(&mut self.new_tag_input), false));
+            }
+        });
         for (tag_name, selected) in &mut self.selectable_tags {
             ui.checkbox(selected, tag_name.clone());
-        }
-        ui.text_edit_singleline(&mut self.new_tag_input);
-        if ui.button("Add tag").clicked() {
-            self.selectable_tags.push((std::mem::take(&mut self.new_tag_input), false));
         }
 
         egui::ComboBox::from_label("State")

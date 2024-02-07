@@ -66,7 +66,7 @@ pub extern fn execute(pointers: *const (*mut Game, *const User, *const egui::Con
         if !*enabled {
             continue;
         }
-        egui::Window::new(plugin.name()).show(egui_ctx, |ui| {
+        egui::Window::new(format!("Plugin: {}", plugin.name())).show(egui_ctx, |ui| {
             plugin.update_ui(ui);
             if plugin.update_interval().check() {
                 plugin.update(&mut game_data);
