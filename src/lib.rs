@@ -68,10 +68,10 @@ pub extern fn execute(pointers: *const (*mut Game, *const User, *const egui::Con
         }
         egui::Window::new(format!("Plugin: {}", plugin.name())).show(egui_ctx, |ui| {
             plugin.update_ui(ui);
-            if plugin.update_interval().check() {
-                plugin.update(&mut game_data);
-            }
         });
+        if plugin.update_interval().check() {
+            plugin.update(&mut game_data);
+        }
     }
 
     unsafe { PLUGIN_MANAGER = Some(plugin_manager) };
