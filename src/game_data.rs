@@ -3,12 +3,12 @@ use super::*;
 #[derive(Debug)]
 pub struct GameData<'a> {
     pub game: &'a mut Game, 
-    pub player_id: PlayerToken,
+    pub player_id: PlayerId,
     pub network_game_cmds: &'a mut Vec<GameCmd>,
 }
 
 impl<'a> GameData<'a> {
-    pub fn new(game: &'a mut Game, player_id: PlayerToken, network_game_cmds: &'a mut Vec<GameCmd>) -> Self {
+    pub fn new(game: &'a mut Game, player_id: PlayerId, network_game_cmds: &'a mut Vec<GameCmd>) -> Self {
         Self {
             game,
             player_id,

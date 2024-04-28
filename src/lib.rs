@@ -45,7 +45,7 @@ pub extern fn execute(pointers: *const (*mut Game, *const User, *const egui::Con
             (false, Box::new(SpacecraftControl::new()))
         );
         plugin_manager.plugins.push(
-            (false, Box::new(SpacecraftConstruction::new(Path::new("./spacecraft-structures").into())))
+            (false, Box::new(SpacecraftConstruction::new(Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/spacecraft-structures")).into())))
         );
         *startup = false;
     }

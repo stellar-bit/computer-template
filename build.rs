@@ -9,8 +9,6 @@ fn main() {
 
     let cargo_toml = std::fs::read_to_string("Cargo.toml").unwrap();
 
-
-
     let computers_dir = std::path::Path::new("./dist");
     std::fs::create_dir_all(computers_dir).unwrap();
 
@@ -44,5 +42,8 @@ fn main() {
 
     let new_cargo_toml = lines.join("\n");
 
-    std::fs::write("Cargo.toml", new_cargo_toml).unwrap();
+    if new_cargo_toml != cargo_toml {
+        std::fs::write("Cargo.toml", new_cargo_toml).unwrap();
+    }
+
 }
