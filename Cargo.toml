@@ -15,5 +15,5 @@ strum = { version = "0.25.0", features = ["derive"] }
 egui = "0.22.0"
 
 [lib]
-name = "computer_1"
+name = "computer_2"
 crate-type = ["cdylib"]
