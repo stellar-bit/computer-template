@@ -12,7 +12,7 @@ pub use spacecraft_construction::SpacecraftConstruction;
 
 use super::*;
 
-use utils::{predictive_shoot_at, shoot_at, fly_to, impulse_fly_to};
+use utils::{predictive_shoot_at, shoot_at, fly_to, improved_fly_to};
 
 pub trait Plugin {
     fn update(&mut self, game_data: &mut GameData) {}

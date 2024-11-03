@@ -103,7 +103,7 @@ impl Plugin for SpacecraftControl {
                         game_data.execute_cmds(predictive_shoot_at((id, spacecraft), target.1));
                     }
                     if let Some(enemy_starbase) = game_data.closest_enemy_star_base(&spacecraft.body.position) {
-                        game_data.execute_cmds(impulse_fly_to((id, spacecraft), enemy_starbase.1.body, 0.7));
+                        game_data.execute_cmds(improved_fly_to((id, spacecraft), enemy_starbase.1.body));
                     }
                 }
                 SpacecraftState::Mining => {
@@ -112,7 +112,7 @@ impl Plugin for SpacecraftControl {
 
                     let mut has_taken_shot = false;
                     if let Some(asteroid) = closest_asteroid_with_least_material.cloned() {
-                        game_data.execute_cmds(impulse_fly_to((id, spacecraft), asteroid.body.clone(), 0.6));
+                        game_data.execute_cmds(improved_fly_to((id, spacecraft), asteroid.body.clone()));
                         if asteroid.body.position.distance(spacecraft.body.position) < 200.0 {
                             game_data.execute_cmds(predictive_shoot_at((id, spacecraft), asteroid.body));
                             has_taken_shot = true;
@@ -130,7 +130,7 @@ impl Plugin for SpacecraftControl {
                     }
 
                     if let Some(star_base) = game_data.closest_my_star_base(&spacecraft.body.position) {
-                        game_data.execute_cmds(impulse_fly_to((id, spacecraft), star_base.1.body, 0.6));
+                        game_data.execute_cmds(improved_fly_to((id, spacecraft), star_base.1.body));
                     }
                 }
             }

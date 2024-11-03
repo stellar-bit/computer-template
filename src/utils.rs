@@ -107,15 +107,15 @@ pub fn impulse_fly_to(
     let final_direction = target.position - spacecraft.body.position;
     let final_velocity_direction = (final_direction - spacecraft.body.velocity).normalize();
 
-    let spacecraft_optimal_direction = optimal_direction(&spacecraft);
+    let spacecraft_optimal_direction = optimal_thrust_direction(&spacecraft);
 
     let rotation_offset = final_velocity_direction.angle_between(
-        Vec2::from_angle(spacecraft.body.rotation).rotate(spacecraft_optimal_direction),
+        Vec2::from_angle(spacecraft.body.rotation).rotate(spacecraft_optimal_direction.0),
     );
     if rotation_offset.abs() > 0.1 {
         return rotate_to_direction(
             (spacecraft_id, spacecraft),
-            final_velocity_direction.rotate(-spacecraft_optimal_direction),
+            final_velocity_direction.rotate(-spacecraft_optimal_direction.0),
             rotation_speed,
         );
     }
@@ -148,7 +148,7 @@ pub fn impulse_fly_to(
     result
 }
 
-fn optimal_direction(spacecraft: &Spacecraft) -> Vec2 {
+fn optimal_thrust_direction(spacecraft: &Spacecraft) -> (Vec2, f32) {
     let mut result = Vec2::ONE;
     let bench = |dir: Vec2| -> f32 {
         let mut result = 0.;
@@ -181,7 +181,7 @@ fn optimal_direction(spacecraft: &Spacecraft) -> Vec2 {
             result = cur_dir;
         }
     }
-    result
+    (result, bench(result))
 }
 
 pub fn fly_to(
@@ -301,9 +301,129 @@ pub fn achieve_velocity(
 ) -> Vec<GameCmd> {
     let mut result = vec![];
 
-    let velocity_offset = target_velocity - spacecraft.body.velocity;
+    let (local_thrust_direction, max_thrust) = optimal_thrust_direction(spacecraft);
+
+    // Calculate the difference between target and current velocity
+    let velocity_correction = target_velocity - spacecraft.body.velocity;
+    let correction_magnitude = velocity_correction.length();
+
+    // If the correction is negligible, deactivate engines
+    if correction_magnitude < 0.1 {
+        println!("Turning of engines...");
+        for (component_id, component) in &spacecraft.components {
+            if let Component::Engine(engine) = component {
+                if engine.active {
+                    result.push(GameCmd::ExecuteComponentCmd(
+                        *spacecraft_id,
+                        *component_id,
+                        ComponentCmd::SetActive(false),
+                    ));
+                }
+            }
+        }
+        return result;
+    }
+
+    dbg!(spacecraft.body.rotation, velocity_correction.angle());
+
+    let correction_direction = velocity_correction.rotate(-local_thrust_direction).normalize();
+
+    // Determine the angle between the spacecraft's facing direction and the correction direction
+    let facing_direction = Vec2::from_angle(spacecraft.body.rotation);
+    let rot_offset = facing_direction.angle_between(correction_direction);
 
 
-    
+    // If the rotation offset is significant, rotate the spacecraft
+    if rot_offset.abs() > 0.1 {
+        println!("Rotating to optimal direction...");
+        result.extend(rotate_to_direction(
+            (spacecraft_id, spacecraft),
+            correction_direction,
+            1.0, // Rotation speed factor
+        ));
+    } else {
+        println!("Accelerating...");
+        // Apply thrust to adjust velocity
+        for (component_id, component) in &spacecraft.components {
+            if let Component::Engine(engine) = component {
+                let engine_direction = Vec2::from_angle(
+                    engine.body.orientation.to_radians() + spacecraft.body.rotation,
+                );
+
+                let power = 1.0;
+
+                let activate = power > 0.0;
+                if engine.active != activate {
+                    result.push(GameCmd::ExecuteComponentCmd(
+                        *spacecraft_id,
+                        *component_id,
+                        ComponentCmd::SetActive(activate),
+                    ));
+                }
+
+                if activate && (engine.power - power).abs() > 0.1 {
+                    result.push(GameCmd::ExecuteComponentCmd(
+                        *spacecraft_id,
+                        *component_id,
+                        ComponentCmd::SetPower(power),
+                    ));
+                }
+            }
+        }
+    }
+
+    result
+}
+
+pub fn improved_fly_to(
+    (spacecraft_id, spacecraft): (&GameObjectId, &Spacecraft),
+    target: GameObjectBody,
+) -> Vec<GameCmd> {
+    let mut result = vec![];
+
+    let position_difference = target.position - spacecraft.body.position;
+    let distance_to_target = position_difference.length();
+    let direction_to_target = position_difference.normalize();
+
+    let relative_velocity = spacecraft.body.velocity - target.velocity;
+    let speed_towards_target = relative_velocity.dot(direction_to_target).max(0.0);
+    println!("{speed_towards_target}");
+
+    let (local_thrust_direction, max_thrust) = optimal_thrust_direction(spacecraft);
+
+    let mass = spacecraft.mass; // Ensure that `mass` is defined in `GameObjectBody`
+    let max_acceleration = max_thrust / mass;
+
+    let distance_safety = 1.5;
+    let rotation_time_tolerance = 10.0;
+
+    // Estimate stopping distance using kinematic equation:
+    // stopping_distance = (speed^2) / (2 * acceleration)
+    let stopping_distance = if max_acceleration > 0.0 {
+        (speed_towards_target * speed_towards_target) / (2.0 * max_acceleration) + relative_velocity.length() * rotation_time_tolerance
+    } else {
+        0.0
+    } * distance_safety;
+
+    println!("{} {}", distance_to_target, stopping_distance);
+
+    if distance_to_target <= stopping_distance && speed_towards_target > 0.0 {
+        // Within stopping distance and moving towards the target, start decelerating
+        println!("Matching target velocity...");
+        result.extend(achieve_velocity(
+            (spacecraft_id, spacecraft),
+            target.velocity, // Match target's velocity
+        ));
+    } else {
+        println!("Flying to target...");
+        // Outside stopping distance, accelerate towards the target
+        let desired_speed = max_thrust;
+        let desired_velocity = target.velocity + direction_to_target * desired_speed;
+        result.extend(achieve_velocity(
+            (spacecraft_id, spacecraft),
+            desired_velocity,
+        ));
+    }
+
     result
 }
